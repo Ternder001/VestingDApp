@@ -15,14 +15,14 @@ contract OrganizationRegistry {
     }
 
     struct Stakeholder {
-        string stakeType; // community, investor, founder, etc.
+        string stakeType;
         Timelock timelock;
         bool whitelisted;
     }
 
-    modifier onlyOwner(address _orgOwner) {
+    modifier onlyOwner() {
         require(
-            msg.sender == _orgOwner,
+            msg.sender == organizations[msg.sender].owner,
             "Only the organization owner can perform this action"
         );
         _;
@@ -43,6 +43,7 @@ contract OrganizationRegistry {
         address indexed organization,
         address indexed stakeholder
     );
+    event Withdrawal(address indexed organization, uint256 amount);
 
     function registerOrganization(string memory _name) public {
         require(bytes(_name).length > 0, "Organization name cannot be empty");
@@ -51,10 +52,8 @@ contract OrganizationRegistry {
             "Organization already exists for this owner"
         );
 
-        // Create a new organization and ERC20 token
         ERC20Token token = new ERC20Token(_name, 18);
 
-        // Initialize the Organization struct without the stakeholders mapping
         Organization storage org = organizations[msg.sender];
         org.owner = msg.sender;
         org.name = _name;
@@ -67,7 +66,7 @@ contract OrganizationRegistry {
         address _stakeholder,
         string memory _type,
         uint256 _vestingPeriod
-    ) public onlyOwner(organizations[msg.sender].owner) {
+    ) public onlyOwner {
         require(
             _stakeholder != address(0),
             "Stakeholder address cannot be zero"
@@ -80,7 +79,6 @@ contract OrganizationRegistry {
             "Stakeholder already added"
         );
 
-        // Create a new timelock contract for the stakeholder
         Timelock timelock = new Timelock(
             org.token,
             _stakeholder,
@@ -97,9 +95,7 @@ contract OrganizationRegistry {
         );
     }
 
-    function whitelistStakeholder(
-        address _stakeholder
-    ) public onlyOwner(organizations[msg.sender].owner) {
+    function whitelistStakeholder(address _stakeholder) public onlyOwner {
         require(
             _stakeholder != address(0),
             "Stakeholder address cannot be zero"
@@ -146,9 +142,7 @@ contract OrganizationRegistry {
         return organizations[_orgOwner].token.balanceOf(_orgOwner);
     }
 
-    function withdraw(
-        uint256 _amount
-    ) public onlyOwner(organizations[msg.sender].owner) {
+    function withdraw(uint256 _amount) public onlyOwner {
         require(_amount > 0, "Amount must be greater than zero");
         Organization storage org = organizations[msg.sender];
         require(
@@ -157,5 +151,20 @@ contract OrganizationRegistry {
         );
 
         org.token.transfer(org.owner, _amount);
+
+        emit Withdrawal(msg.sender, _amount);
+    }
+
+    function claimTokens(address _orgOwner) public {
+        Organization storage org = organizations[_orgOwner];
+        require(org.owner != address(0), "Organization not found");
+        Stakeholder storage stakeholder = org.stakeholders[msg.sender];
+        require(
+            address(stakeholder.timelock) != address(0),
+            "Stakeholder not found"
+        );
+        require(stakeholder.whitelisted, "Stakeholder not whitelisted");
+
+        stakeholder.timelock.release();
     }
 }

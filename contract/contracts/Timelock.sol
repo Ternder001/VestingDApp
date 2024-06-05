@@ -8,11 +8,17 @@ contract Timelock {
     address public beneficiary;
     uint256 public releaseTime;
 
+    event TokensReleased(address indexed beneficiary, uint256 amount);
+
     constructor(
         ERC20Token _token,
         address _beneficiary,
         uint256 _vestingPeriod
     ) {
+        require(
+            _beneficiary != address(0),
+            "Beneficiary cannot be zero address"
+        );
         token = _token;
         beneficiary = _beneficiary;
         releaseTime = block.timestamp + _vestingPeriod;
@@ -24,5 +30,6 @@ contract Timelock {
         require(amount > 0, "No tokens to release");
 
         token.transfer(beneficiary, amount);
+        emit TokensReleased(beneficiary, amount);
     }
 }
