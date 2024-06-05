@@ -19,4 +19,4 @@ export const getContract = (providerOrSigner) =>
 //   return new ethers.Contract(address, Abi, provider.getSigner());
 // };
 
-export const CONTRACT_ADDRESS = "0x23ab58e681BB084256B71e8c5E77910E7bcb0372";
+export const CONTRACT_ADDRESS = "0x52e738405677A35d1ba8F5d40FAc93292b6162E4";
