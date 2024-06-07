@@ -1,10 +1,13 @@
-import React from 'react'
+import React from 'react';
 
 export const Header = () => {
   return (
-    <div className='flex justify-between item-center'>
-        <div>Vesting App</div>
-        <w3m-button />
-    </div>
-  )
-}
+    <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
+      <div className="text-xl font-bold">Vesting App</div>
+      <w3m-button />
+    </header>
+  );
+};
+
+export default Header;
+
